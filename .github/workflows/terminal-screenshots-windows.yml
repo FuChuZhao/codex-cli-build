@@ -37,9 +37,6 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout build repo
-        uses: actions/checkout@v4
-
       - name: Setup SSH for SOURCE_REPO
         shell: bash
         run: |
