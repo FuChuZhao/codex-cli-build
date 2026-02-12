@@ -99,8 +99,26 @@ jobs:
         shell: pwsh
         working-directory: source
         run: |
+          $ErrorActionPreference = "Stop"
           if (Test-Path "out\\screenshots\\windows.zip") { Remove-Item -Force "out\\screenshots\\windows.zip" }
-          Compress-Archive -Path "out\\screenshots\\windows\\*" -DestinationPath "out\\screenshots\\windows.zip" -Force
+
+          $script = @'
+          import pathlib
+          import zipfile
+
+          root = pathlib.Path("out/screenshots/windows")
+          out = pathlib.Path("out/screenshots/windows.zip")
+          out.parent.mkdir(parents=True, exist_ok=True)
+
+          files = [p for p in root.rglob("*") if p.is_file()]
+          with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+              for p in files:
+                  z.write(p, p.relative_to(root))
+
+          print(f"zipped {len(files)} files -> {out} ({out.stat().st_size} bytes)")
+          '@
+
+          $script | python -
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
