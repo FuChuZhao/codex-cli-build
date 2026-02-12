@@ -95,10 +95,17 @@ jobs:
         run: |
           ./tool/ci/terminal_visual/capture_windows.ps1 -OutDir "out\\screenshots\\windows" -Cols ${{ inputs.cols }} -Rows ${{ inputs.rows }}
 
+      - name: Package artifact (zip)
+        shell: pwsh
+        working-directory: source
+        run: |
+          if (Test-Path "out\\screenshots\\windows.zip") { Remove-Item -Force "out\\screenshots\\windows.zip" }
+          Compress-Archive -Path "out\\screenshots\\windows\\*" -DestinationPath "out\\screenshots\\windows.zip" -Force
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact_name }}-terminal-screenshots-windows
-          path: source/out/screenshots/windows/
+          path: source/out/screenshots/windows.zip
           if-no-files-found: error
           retention-days: 1
