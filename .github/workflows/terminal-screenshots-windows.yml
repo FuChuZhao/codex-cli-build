@@ -1,0 +1,107 @@
+name: Terminal Screenshots (Windows)
+
+run-name: termshots windows ${{ inputs.source_ref }} (${{ inputs.request_id }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Ref/commit in SOURCE_REPO to run against
+        required: true
+        default: main
+      artifact_name:
+        description: Artifact base name
+        required: true
+        default: codex-cli
+      request_id:
+        description: Unique request id (used by scripts to locate this run)
+        required: true
+        default: manual
+      cols:
+        description: Demo columns
+        required: false
+        default: "80"
+      rows:
+        description: Demo rows
+        required: false
+        default: "24"
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_REPO: FuChuZhao/codex-cli-source
+
+jobs:
+  screenshots:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Setup SSH for SOURCE_REPO
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SOURCE_REPO_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github.com
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Clone private SOURCE_REPO
+        shell: bash
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          set -euo pipefail
+          git init source
+          cd source
+          git remote add origin "git@github.com:${SOURCE_REPO}.git"
+          git fetch --depth 1 origin "${SOURCE_REF}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Install deps
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir pillow
+
+      - name: Ensure Windows Terminal (best-effort)
+        shell: pwsh
+        run: |
+          if (Get-Command wt -ErrorAction SilentlyContinue) { exit 0 }
+          if (Get-Command winget -ErrorAction SilentlyContinue) {
+            winget install --id Microsoft.WindowsTerminal -e --source winget --accept-package-agreements --accept-source-agreements
+            exit 0
+          }
+          Write-Host "wt not found and winget missing; will proceed without wt."
+
+      - name: Ensure WezTerm (best-effort)
+        shell: pwsh
+        run: |
+          if (Get-Command wezterm -ErrorAction SilentlyContinue) { exit 0 }
+          if (Get-Command winget -ErrorAction SilentlyContinue) {
+            winget install --id wez.wezterm -e --source winget --accept-package-agreements --accept-source-agreements
+            exit 0
+          }
+          Write-Host "wezterm not found and winget missing; will proceed without wezterm."
+
+      - name: Capture screenshots
+        shell: pwsh
+        working-directory: source
+        run: |
+          ./tool/ci/terminal_visual/capture_windows.ps1 -OutDir "out\\screenshots\\windows" -Cols ${{ inputs.cols }} -Rows ${{ inputs.rows }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}-terminal-screenshots-windows
+          path: source/out/screenshots/windows/
+          if-no-files-found: error
+          retention-days: 1

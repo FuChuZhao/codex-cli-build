@@ -1,0 +1,109 @@
+name: Build (private source)
+
+run-name: build ${{ inputs.source_ref }} (${{ inputs.request_id }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Ref/commit in SOURCE_REPO to build
+        required: true
+        default: main
+      artifact_name:
+        description: Artifact base name (workflow appends OS)
+        required: true
+        default: codex-cli
+      request_id:
+        description: Unique request id (used by scripts to locate this run)
+        required: true
+        default: manual
+      run_tests:
+        description: Run cargo tests (0/1)
+        required: false
+        default: "1"
+      run_vt100_tests:
+        description: Run vt100 TUI tests (0/1)
+        required: false
+        default: "1"
+
+permissions:
+  contents: read
+
+env:
+  # Hardcode SOURCE_REPO to avoid ambiguity and keep the public repo minimal.
+  SOURCE_REPO: FuChuZhao/codex-cli-source
+  RUN_TESTS: ${{ inputs.run_tests }}
+  RUN_VT100_TESTS: ${{ inputs.run_vt100_tests }}
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Setup SSH for SOURCE_REPO
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SOURCE_REPO_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github.com
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Clone private SOURCE_REPO
+        shell: bash
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          set -euo pipefail
+          git init source
+          cd source
+          git remote add origin "git@github.com:${SOURCE_REPO}.git"
+          git fetch --depth 1 origin "${SOURCE_REF}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        working-directory: source
+        run: |
+          set -euo pipefail
+          OUT_DIR="${PWD}/out" bash tool/ci/build_codex.sh
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: source
+        run: |
+          $outDir = Join-Path $PWD "out"
+          ./tool/ci/build_codex.ps1 -OutDir $outDir
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}-${{ matrix.os }}
+          path: source/out/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload TUI snapshots (visual diffs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}-tui-snapshots-${{ matrix.os }}
+          path: source/codex-rs/tui/src/snapshots/
+          if-no-files-found: error
+          retention-days: 1

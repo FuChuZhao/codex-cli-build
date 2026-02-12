@@ -1,0 +1,114 @@
+name: Terminal Screenshots (Linux)
+
+run-name: termshots linux ${{ inputs.source_ref }} (${{ inputs.request_id }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Ref/commit in SOURCE_REPO to run against
+        required: true
+        default: main
+      artifact_name:
+        description: Artifact base name
+        required: true
+        default: codex-cli
+      request_id:
+        description: Unique request id (used by scripts to locate this run)
+        required: true
+        default: manual
+      terminals:
+        description: Comma-separated terminal list (optional)
+        required: false
+        default: ""
+      cols:
+        description: Demo columns
+        required: false
+        default: "80"
+      rows:
+        description: Demo rows
+        required: false
+        default: "24"
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_REPO: FuChuZhao/codex-cli-source
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Setup SSH for SOURCE_REPO
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SOURCE_REPO_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github.com
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Clone private SOURCE_REPO
+        shell: bash
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          set -euo pipefail
+          git init source
+          cd source
+          git remote add origin "git@github.com:${SOURCE_REPO}.git"
+          git fetch --depth 1 origin "${SOURCE_REF}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Install deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            fonts-dejavu-core \
+            imagemagick \
+            python3-pip \
+            x11-utils \
+            xterm \
+            xvfb
+
+          # Optional terminals (best-effort)
+          sudo apt-get install -y kitty alacritty || true
+
+          python3 -m pip install --disable-pip-version-check --no-cache-dir pillow
+
+      - name: Capture screenshots
+        shell: bash
+        working-directory: source
+        env:
+          TERMINALS: ${{ inputs.terminals }}
+          COLS: ${{ inputs.cols }}
+          ROWS: ${{ inputs.rows }}
+        run: |
+          set -euo pipefail
+          args=(--out-dir out/screenshots/linux --cols "${COLS}" --rows "${ROWS}")
+          if [[ -n "${TERMINALS}" ]]; then
+            args+=(--terminals "${TERMINALS}")
+          fi
+          bash tool/ci/terminal_visual/capture_linux.sh "${args[@]}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}-terminal-screenshots-linux
+          path: source/out/screenshots/linux/
+          if-no-files-found: error
+          retention-days: 1
+
