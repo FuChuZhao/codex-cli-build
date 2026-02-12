@@ -121,7 +121,7 @@ jobs:
           $script | python -
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.artifact_name }}-terminal-screenshots-windows
           path: source/out/screenshots/windows.zip
