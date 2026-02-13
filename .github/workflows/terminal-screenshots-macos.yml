@@ -71,6 +71,8 @@ jobs:
           set -euo pipefail
           brew install --cask iterm2 || true
           brew install --cask wezterm || true
+          sudo xattr -dr com.apple.quarantine "/Applications/iTerm.app" 2>/dev/null || true
+          sudo xattr -dr com.apple.quarantine "/Applications/WezTerm.app" 2>/dev/null || true
           python3 -m venv .venv
           source .venv/bin/activate
           python -m pip install --disable-pip-version-check --no-cache-dir pillow
