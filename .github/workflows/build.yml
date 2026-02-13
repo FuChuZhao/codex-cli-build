@@ -32,13 +32,15 @@ permissions:
 env:
   # Hardcode SOURCE_REPO to avoid ambiguity and keep the public repo minimal.
   SOURCE_REPO: FuChuZhao/codex-cli-source
-  RUN_TESTS: ${{ inputs.run_tests }}
-  RUN_VT100_TESTS: ${{ inputs.run_vt100_tests }}
 
 jobs:
   build:
     name: build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      # Build all OSes, but only run tests on Linux by default to keep runner time reasonable.
+      RUN_TESTS: ${{ matrix.os == 'ubuntu-latest' && inputs.run_tests || '0' }}
+      RUN_VT100_TESTS: ${{ matrix.os == 'ubuntu-latest' && inputs.run_vt100_tests || '0' }}
     strategy:
       fail-fast: false
       matrix:
