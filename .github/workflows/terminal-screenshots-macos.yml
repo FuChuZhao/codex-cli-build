@@ -70,6 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           brew install --cask iterm2 || true
+          brew install --cask wezterm || true
           python3 -m venv .venv
           source .venv/bin/activate
           python -m pip install --disable-pip-version-check --no-cache-dir pillow
@@ -89,7 +90,7 @@ jobs:
             --rows "${ROWS}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.artifact_name }}-terminal-screenshots-macos
           path: source/out/screenshots/macos/

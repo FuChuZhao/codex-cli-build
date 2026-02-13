@@ -102,7 +102,7 @@ jobs:
           bash tool/ci/terminal_visual/capture_linux.sh "${args[@]}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.artifact_name }}-terminal-screenshots-linux
           path: source/out/screenshots/linux/

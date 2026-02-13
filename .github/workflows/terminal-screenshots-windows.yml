@@ -79,11 +79,21 @@ jobs:
           }
           Write-Host "wt not found and winget missing; will proceed without wt."
 
+      - name: Ensure WezTerm (best-effort)
+        shell: pwsh
+        run: |
+          if (Get-Command wezterm -ErrorAction SilentlyContinue) { exit 0 }
+          if (Get-Command winget -ErrorAction SilentlyContinue) {
+            winget install --id wez.wezterm -e --source winget --accept-package-agreements --accept-source-agreements
+            exit 0
+          }
+          Write-Host "wezterm not found and winget missing; will proceed without wezterm."
+
       - name: Capture screenshots
         shell: pwsh
         working-directory: source
         run: |
-          ./tool/ci/terminal_visual/capture_windows.ps1 -OutDir "out\\screenshots\\windows" -Cols ${{ inputs.cols }} -Rows ${{ inputs.rows }}
+          ./tool/ci/terminal_visual/capture_windows.ps1 -OutDir "out\\screenshots\\windows" -Cols ${{ inputs.cols }} -Rows ${{ inputs.rows }} -CaptureWezTerm
 
       - name: Package artifact (zip)
         shell: pwsh

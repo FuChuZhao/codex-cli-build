@@ -92,7 +92,7 @@ jobs:
           ./tool/ci/build_codex.ps1 -OutDir $outDir
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.artifact_name }}-${{ matrix.os }}
           path: source/out/*
@@ -101,7 +101,7 @@ jobs:
 
       - name: Upload TUI snapshots (visual diffs)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.artifact_name }}-tui-snapshots-${{ matrix.os }}
           path: source/codex-rs/tui/src/snapshots/
