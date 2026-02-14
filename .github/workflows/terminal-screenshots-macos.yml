@@ -25,6 +25,10 @@ on:
         description: Demo rows
         required: false
         default: "24"
+      formats:
+        description: Comma-separated demo formats
+        required: false
+        default: "halfblock,kitty,iterm2,sixel"
 
 permissions:
   contents: read
@@ -71,6 +75,7 @@ jobs:
           set -euo pipefail
           brew install --cask iterm2 || true
           brew install --cask wezterm || true
+          brew install libsixel || true
           sudo xattr -dr com.apple.quarantine "/Applications/iTerm.app" 2>/dev/null || true
           sudo xattr -dr com.apple.quarantine "/Applications/WezTerm.app" 2>/dev/null || true
           python3 -m venv .venv
@@ -83,13 +88,15 @@ jobs:
         env:
           COLS: ${{ inputs.cols }}
           ROWS: ${{ inputs.rows }}
+          FORMATS: ${{ inputs.formats }}
         run: |
           set -euo pipefail
           source .venv/bin/activate
           bash tool/ci/terminal_visual/capture_macos.sh \
             --out-dir out/screenshots/macos \
             --cols "${COLS}" \
-            --rows "${ROWS}"
+            --rows "${ROWS}" \
+            --formats "${FORMATS}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6

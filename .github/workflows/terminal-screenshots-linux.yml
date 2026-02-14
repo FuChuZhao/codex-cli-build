@@ -29,6 +29,10 @@ on:
         description: Demo rows
         required: false
         default: "24"
+      formats:
+        description: Comma-separated demo formats
+        required: false
+        default: "halfblock,kitty,iterm2,sixel"
 
 permissions:
   contents: read
@@ -76,6 +80,7 @@ jobs:
           sudo apt-get install -y \
             fonts-dejavu-core \
             imagemagick \
+            libsixel-bin \
             python3-pip \
             x11-utils \
             xterm \
@@ -93,9 +98,10 @@ jobs:
           TERMINALS: ${{ inputs.terminals }}
           COLS: ${{ inputs.cols }}
           ROWS: ${{ inputs.rows }}
+          FORMATS: ${{ inputs.formats }}
         run: |
           set -euo pipefail
-          args=(--out-dir out/screenshots/linux --cols "${COLS}" --rows "${ROWS}")
+          args=(--out-dir out/screenshots/linux --cols "${COLS}" --rows "${ROWS}" --formats "${FORMATS}")
           if [[ -n "${TERMINALS}" ]]; then
             args+=(--terminals "${TERMINALS}")
           fi

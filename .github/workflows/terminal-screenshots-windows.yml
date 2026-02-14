@@ -25,6 +25,10 @@ on:
         description: Demo rows
         required: false
         default: "24"
+      formats:
+        description: Comma-separated demo formats
+        required: false
+        default: "halfblock,kitty,iterm2"
 
 permissions:
   contents: read
@@ -93,7 +97,7 @@ jobs:
         shell: pwsh
         working-directory: source
         run: |
-          ./tool/ci/terminal_visual/capture_windows.ps1 -OutDir "out\\screenshots\\windows" -Cols ${{ inputs.cols }} -Rows ${{ inputs.rows }} -CaptureWezTerm
+          ./tool/ci/terminal_visual/capture_windows.ps1 -OutDir "out\\screenshots\\windows" -Cols ${{ inputs.cols }} -Rows ${{ inputs.rows }} -Formats "${{ inputs.formats }}" -CaptureWezTerm
 
       - name: Package artifact (zip)
         shell: pwsh
