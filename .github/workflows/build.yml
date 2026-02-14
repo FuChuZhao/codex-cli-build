@@ -31,7 +31,7 @@ permissions:
 
 env:
   # Hardcode SOURCE_REPO to avoid ambiguity and keep the public repo minimal.
-  SOURCE_REPO: FuChuZhao/codex-cli-source
+  SOURCE_REPO: FUCHUZHAO/codex-cli-source
 
 jobs:
   build:

@@ -34,7 +34,7 @@ permissions:
   contents: read
 
 env:
-  SOURCE_REPO: FuChuZhao/codex-cli-source
+  SOURCE_REPO: FUCHUZHAO/codex-cli-source
 
 jobs:
   screenshots:
