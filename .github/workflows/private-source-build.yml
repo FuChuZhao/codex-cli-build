@@ -6,26 +6,21 @@ on:
       source_repo:
         description: "Private source repo in owner/name format"
         required: true
-        type: string
       source_ref:
         description: "Branch/tag/commit to build from source repo"
         required: true
-        type: string
       artifact_name:
         description: "Uploaded artifact name"
         required: true
         default: "codex-cloud-build"
-        type: string
       build_script:
         description: "Build entrypoint path inside source repo"
         required: true
         default: "tool/ci/build-cloud-artifacts.sh"
-        type: string
       artifact_dir:
         description: "Artifact directory path inside source repo workspace"
         required: true
         default: "out/cloud-build"
-        type: string
 
 permissions:
   contents: read
