@@ -49,7 +49,7 @@ jobs:
           Host github.com
             IdentityFile ~/.ssh/id_ed25519
             IdentitiesOnly yes
-            StrictHostKeyChecking accept-new
+            StrictHostKeyChecking yes
           CFG
 
       - name: Clone private source repo at source_ref
@@ -106,28 +106,15 @@ jobs:
       - name: Checkout public build repo
         uses: actions/checkout@v5
 
-      - name: Prepare SSH deploy key for private source clone (Windows)
-        shell: pwsh
-        env:
-          SOURCE_REPO_SSH_KEY: ${{ secrets.SOURCE_REPO_SSH_KEY }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:SOURCE_REPO_SSH_KEY)) {
-            throw "Missing secret SOURCE_REPO_SSH_KEY"
-          }
-          $sshDir = Join-Path $HOME ".ssh"
-          New-Item -ItemType Directory -Path $sshDir -Force | Out-Null
-          $keyPath = Join-Path $sshDir "id_ed25519"
-          $keyContent = $env:SOURCE_REPO_SSH_KEY -replace "`r", ""
-          [System.IO.File]::WriteAllText($keyPath, $keyContent, [System.Text.Encoding]::ASCII)
-          @"
-          Host github.com
-            IdentityFile $keyPath
-            IdentitiesOnly yes
-            StrictHostKeyChecking accept-new
-          "@ | Set-Content -Path (Join-Path $sshDir "config") -Encoding ascii
+      - name: Load SSH key (Windows)
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SOURCE_REPO_SSH_KEY }}
 
       - name: Clone private source repo at source_ref (Windows)
         shell: pwsh
+        env:
+          GIT_SSH_COMMAND: ssh -o StrictHostKeyChecking=accept-new
         run: |
           git clone --no-tags --depth 1 "git@github.com:${{ inputs.source_repo }}.git" source
           Set-Location source
