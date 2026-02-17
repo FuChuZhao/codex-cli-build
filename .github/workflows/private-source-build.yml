@@ -49,7 +49,7 @@ jobs:
           Host github.com
             IdentityFile ~/.ssh/id_ed25519
             IdentitiesOnly yes
-            StrictHostKeyChecking yes
+            StrictHostKeyChecking accept-new
           CFG
 
       - name: Clone private source repo at source_ref
@@ -118,12 +118,11 @@ jobs:
           New-Item -ItemType Directory -Path $sshDir -Force | Out-Null
           $keyPath = Join-Path $sshDir "id_ed25519"
           ($env:SOURCE_REPO_SSH_KEY -replace "`r", "") | Set-Content -Path $keyPath -NoNewline
-          ssh-keyscan github.com | Out-File -FilePath (Join-Path $sshDir "known_hosts") -Encoding ascii -Append
           @"
           Host github.com
             IdentityFile $keyPath
             IdentitiesOnly yes
-            StrictHostKeyChecking yes
+            StrictHostKeyChecking accept-new
           "@ | Set-Content -Path (Join-Path $sshDir "config") -Encoding ascii
 
       - name: Clone private source repo at source_ref (Windows)
