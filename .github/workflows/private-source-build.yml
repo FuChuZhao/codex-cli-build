@@ -117,7 +117,7 @@ jobs:
           $sshDir = Join-Path $HOME ".ssh"
           New-Item -ItemType Directory -Path $sshDir -Force | Out-Null
           $keyPath = Join-Path $sshDir "id_ed25519"
-          ($env:SOURCE_REPO_SSH_KEY -replace "`r", "") | Set-Content -Path $keyPath -NoNewline
+          ($env:SOURCE_REPO_SSH_KEY -replace "`r", "") | Set-Content -Path $keyPath -NoNewline -Encoding ascii
           @"
           Host github.com
             IdentityFile $keyPath
